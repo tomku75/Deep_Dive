@@ -22,8 +22,9 @@
 #5. Eval
     python object_detection/eval.py `
         --logtostderr `
-        --eval_dir=PATH_TO_EVALUATION_OUTPUT_DIRECTORY `
-        --pipeline_config_path=PATH_TO_CONFIG_FILE
+        --checkpoint_dir=object_detection/train_dir `
+        --eval_dir=object_detection/eval_dir `
+        --pipeline_config_path=object_detection/pipeline_config_path/faster_rcnn_resnet101_coco.config
 
 #6. run tensorboard
     tensorboard `
@@ -36,8 +37,3 @@
         --pipeline_config_path /PATH/TO/CONFIG/FILE.config `
         --trained_checkpoint_prefix /PATH/TO/TRAINED/OUTPUT/DIRECTORY/model.ckpt `
         --output_directory /PATH/TO/FROZEN/DIRECTORY
-
-    python object_detection/eval.py \
-        --logtostderr \
-        --eval_dir=PATH_TO_EVALUATION_OUTPUT_DIRECTORY \
-        --pipeline_config_path=PATH_TO_CONFIG_FILE
