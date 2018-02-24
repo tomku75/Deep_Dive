@@ -1,25 +1,20 @@
 item {
-  name: "/m/0k4j"
-  id: 14
-  display_name: "Car"
+  id: 1
+  name: 'Car'
 }
 item {
-  name: "/m/07r04"
-  id: 88
-  display_name: "Truck"
+  id: 2
+  name: 'Truck'
 }
 item {
-  name: "/m/04_sv"
-  id: 93
-  display_name: "Motorcycle"
+  id: 3
+  name: 'Licence plate'
 }
 item {
-  name: "/m/01jfm_"
-  id: 102
-  display_name: "Licence plate"
+  id: 4
+  name: 'Motorcycle'
 }
 item {
-  name: "/m/015qff"
-  id: 190
-  display_name: "Traffic light"
+  id: 5
+  name: 'Traffic light'
 }
