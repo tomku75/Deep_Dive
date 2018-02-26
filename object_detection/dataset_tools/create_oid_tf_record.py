@@ -88,6 +88,7 @@ def main(_):
                              counter)
 
       image_id, image_annotations = image_data
+	  
       # In OID image file names are formed by appending ".jpg" to the image ID.
       image_path = os.path.join(FLAGS.input_images_directory, image_id + '.jpg')
       with tf.gfile.Open(image_path) as image_file:

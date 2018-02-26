@@ -23,7 +23,7 @@ import collections
 import functools
 # Set headless-friendly backend.
 #import matplotlib; matplotlib.use('Agg')  # pylint: disable=multiple-statements
-#import matplotlib.pyplot as plt  # pylint: disable=g-import-not-at-top
+import matplotlib.pyplot as plt  # pylint: disable=g-import-not-at-top
 import numpy as np
 import PIL.Image as Image
 import PIL.ImageColor as ImageColor
@@ -591,8 +591,8 @@ def visualize_boxes_and_labels_on_image_array(
   box_to_keypoints_map = collections.defaultdict(list)
   if not max_boxes_to_draw:
     max_boxes_to_draw = boxes.shape[0]
-  for i in range(min(max_boxes_to_draw, boxes.shape[0])):
-    if scores is None or scores[i] > min_score_thresh:
+  for i in range(min(max_boxes_to_draw, boxes.shape[0])): 
+    if scores is None or scores[i] > min_score_thresh and classes[i] in category_index.keys():
       box = tuple(boxes[i].tolist())
       if instance_masks is not None:
         box_to_instance_masks_map[box] = instance_masks[i]
@@ -608,7 +608,9 @@ def visualize_boxes_and_labels_on_image_array(
           if not agnostic_mode:
             if classes[i] in category_index.keys():
               class_name = category_index[classes[i]]['name']
+              print(classes[i])
             else:
+              print(classes[i])
               class_name = 'N/A'
             display_str = str(class_name)
         if not skip_scores:

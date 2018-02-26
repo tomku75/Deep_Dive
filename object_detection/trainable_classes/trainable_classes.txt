@@ -1,0 +1,5 @@
+Car
+Truck
+Licence plate
+Motorcycle
+Traffic light

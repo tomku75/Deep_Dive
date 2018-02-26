@@ -813,10 +813,9 @@ def matmul_gather_on_zeroth_axis(params, indices, scope=None):
     from indices given by indices, with shape indices.shape + params.shape[1:].
   """
   with tf.name_scope(scope, 'MatMulGather'):
-    params_shape = shape_utils.combined_static_and_dynamic_shape(params)
-    indices_shape = shape_utils.combined_static_and_dynamic_shape(indices)
-    params2d = tf.reshape(params, [params_shape[0], -1])
-    indicator_matrix = tf.one_hot(indices, params_shape[0])
+    index_range = params.shape[0]
+    params2d = tf.reshape(params, [index_range, -1])
+    indicator_matrix = tf.one_hot(indices, index_range)
     gathered_result_flattened = tf.matmul(indicator_matrix, params2d)
     return tf.reshape(gathered_result_flattened,
-                      tf.stack(indices_shape + params_shape[1:]))
+                      indices.shape.concatenate(params.shape[1:]))
