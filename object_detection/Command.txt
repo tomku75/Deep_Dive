@@ -17,7 +17,7 @@
     python object_detection/train.py `
         --logtostderr `
         --train_dir=object_detection/train_dir `
-        --pipeline_config_path=object_detection/pipeline_config_path/faster_rcnn_resnet101_coco.config
+        --pipeline_config_path=object_detection/pipeline_config/faster_rcnn_resnet101_coco.config
 
 #5. Eval
     python object_detection/eval.py `
