@@ -12,10 +12,8 @@ py_library(
     srcs = ["tf_example_decoder.py"],
     deps = [
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/core:data_decoder",
-        "//tensorflow/models/research/object_detection/core:standard_fields",
-        "//tensorflow/models/research/object_detection/protos:input_reader_py_pb2",
-        "//tensorflow/models/research/object_detection/utils:label_map_util",
+        "//tensorflow_models/object_detection/core:data_decoder",
+        "//tensorflow_models/object_detection/core:standard_fields",
     ],
 )
 
@@ -25,7 +23,6 @@ py_test(
     deps = [
         ":tf_example_decoder",
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/core:standard_fields",
-        "//tensorflow/models/research/object_detection/protos:input_reader_py_pb2",
+        "//tensorflow_models/object_detection/core:standard_fields",
     ],
 )

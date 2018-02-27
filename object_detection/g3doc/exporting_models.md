@@ -8,11 +8,11 @@ graph proto. A checkpoint will typically consist of three files:
 * model.ckpt-${CHECKPOINT_NUMBER}.meta
 
 After you've identified a candidate checkpoint to export, run the following
-command from tensorflow/models/research:
+command from tensorflow/models/object_detection:
 
 ``` bash
-# From tensorflow/models/research/
-python object_detection/export_inference_graph.py \
+# From tensorflow/models
+python object_detection/export_inference_graph \
     --input_type image_tensor \
     --pipeline_config_path ${PIPELINE_CONFIG_PATH} \
     --trained_checkpoint_prefix ${TRAIN_PATH} \

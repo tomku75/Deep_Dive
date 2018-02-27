@@ -55,18 +55,6 @@ def create_category_index(categories):
   return category_index
 
 
-def get_max_label_map_index(label_map):
-  """Get maximum index in label map.
-
-  Args:
-    label_map: a StringIntLabelMapProto
-
-  Returns:
-    an integer
-  """
-  return max([item.id for item in label_map.item])
-
-
 def convert_label_map_to_categories(label_map,
                                     max_num_classes,
                                     use_display_name=True):
@@ -136,12 +124,11 @@ def load_labelmap(path):
   return label_map
 
 
-def get_label_map_dict(label_map_path, use_display_name=False):
+def get_label_map_dict(label_map_path):
   """Reads a label map and returns a dictionary of label names to id.
 
   Args:
     label_map_path: path to label_map.
-    use_display_name: whether to use the label map items' display names as keys.
 
   Returns:
     A dictionary mapping label names to id.
@@ -149,30 +136,5 @@ def get_label_map_dict(label_map_path, use_display_name=False):
   label_map = load_labelmap(label_map_path)
   label_map_dict = {}
   for item in label_map.item:
-    if use_display_name:
-      label_map_dict[item.display_name] = item.id
-    else:
-      label_map_dict[item.name] = item.id
+    label_map_dict[item.name] = item.id
   return label_map_dict
-
-
-def create_category_index_from_labelmap(label_map_path):
-  """Reads a label map and returns a category index.
-
-  Args:
-    label_map_path: Path to `StringIntLabelMap` proto text file.
-
-  Returns:
-    A category index, which is a dictionary that maps integer ids to dicts
-    containing categories, e.g.
-    {1: {'id': 1, 'name': 'dog'}, 2: {'id': 2, 'name': 'cat'}, ...}
-  """
-  label_map = load_labelmap(label_map_path)
-  max_num_classes = max(item.id for item in label_map.item)
-  categories = convert_label_map_to_categories(label_map, max_num_classes)
-  return create_category_index(categories)
-
-
-def create_class_agnostic_category_index():
-  """Creates a category index with a single `object` class."""
-  return {1: {'id': 1, 'name': 'object'}}

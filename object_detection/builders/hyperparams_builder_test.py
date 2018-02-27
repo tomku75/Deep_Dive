@@ -20,6 +20,7 @@ import tensorflow as tf
 
 from google.protobuf import text_format
 
+# TODO: Rewrite third_party imports.
 from object_detection.builders import hyperparams_builder
 from object_detection.protos import hyperparams_pb2
 

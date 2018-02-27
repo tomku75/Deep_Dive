@@ -9,30 +9,9 @@ licenses(["notice"])
 # Apache 2.0
 
 py_library(
-    name = "test_case",
-    srcs = ["test_case.py"],
-    deps = ["//tensorflow"],
-)
-
-py_library(
     name = "category_util",
     srcs = ["category_util.py"],
     deps = ["//tensorflow"],
-)
-
-py_library(
-    name = "config_util",
-    srcs = ["config_util.py"],
-    deps = [
-        "//pyglib/logging",
-        "//tensorflow",
-        "//tensorflow/models/research/object_detection/protos:eval_py_pb2",
-        "//tensorflow/models/research/object_detection/protos:image_resizer_py_pb2",
-        "//tensorflow/models/research/object_detection/protos:input_reader_py_pb2",
-        "//tensorflow/models/research/object_detection/protos:model_py_pb2",
-        "//tensorflow/models/research/object_detection/protos:pipeline_py_pb2",
-        "//tensorflow/models/research/object_detection/protos:train_py_pb2",
-    ],
 )
 
 py_library(
@@ -44,57 +23,31 @@ py_library(
 )
 
 py_library(
-    name = "json_utils",
-    srcs = ["json_utils.py"],
-    deps = [],
-)
-
-py_test(
-    name = "json_utils_test",
-    srcs = ["json_utils_test.py"],
-    deps = [
-        ":json_utils",
-        "//tensorflow",
-    ],
-)
-
-py_library(
     name = "label_map_util",
     srcs = ["label_map_util.py"],
     deps = [
-        "//google/protobuf",
+        "//third_party/py/google/protobuf",
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/protos:string_int_label_map_py_pb2",
+        "//tensorflow_models/object_detection/protos:string_int_label_map_py_pb2",
     ],
 )
 
 py_library(
     name = "learning_schedules",
     srcs = ["learning_schedules.py"],
-    deps = [
-        "//tensorflow",
-    ],
+    deps = ["//tensorflow"],
 )
 
 py_library(
     name = "metrics",
     srcs = ["metrics.py"],
-    deps = ["//numpy"],
+    deps = ["//third_party/py/numpy"],
 )
 
 py_library(
     name = "np_box_list",
     srcs = ["np_box_list.py"],
-    deps = ["//numpy"],
-)
-
-py_library(
-    name = "np_box_mask_list",
-    srcs = ["np_box_mask_list.py"],
-    deps = [
-        ":np_box_list",
-        "//numpy",
-    ],
+    deps = ["//tensorflow"],
 )
 
 py_library(
@@ -103,18 +56,7 @@ py_library(
     deps = [
         ":np_box_list",
         ":np_box_ops",
-        "//numpy",
-    ],
-)
-
-py_library(
-    name = "np_box_mask_list_ops",
-    srcs = ["np_box_mask_list_ops.py"],
-    deps = [
-        ":np_box_list_ops",
-        ":np_box_mask_list",
-        ":np_mask_ops",
-        "//numpy",
+        "//tensorflow",
     ],
 )
 
@@ -125,20 +67,12 @@ py_library(
 )
 
 py_library(
-    name = "np_mask_ops",
-    srcs = ["np_mask_ops.py"],
-    deps = ["//numpy"],
-)
-
-py_library(
     name = "object_detection_evaluation",
     srcs = ["object_detection_evaluation.py"],
     deps = [
-        ":label_map_util",
         ":metrics",
         ":per_image_evaluation",
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/core:standard_fields",
     ],
 )
 
@@ -146,12 +80,11 @@ py_library(
     name = "ops",
     srcs = ["ops.py"],
     deps = [
-        ":shape_utils",
         ":static_shape",
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/core:box_list",
-        "//tensorflow/models/research/object_detection/core:box_list_ops",
-        "//tensorflow/models/research/object_detection/core:standard_fields",
+        "//tensorflow_models/object_detection/core:box_list",
+        "//tensorflow_models/object_detection/core:box_list_ops",
+        "//tensorflow_models/object_detection/core:standard_fields",
     ],
 )
 
@@ -161,8 +94,6 @@ py_library(
     deps = [
         ":np_box_list",
         ":np_box_list_ops",
-        ":np_box_mask_list",
-        ":np_box_mask_list_ops",
         "//tensorflow",
     ],
 )
@@ -170,10 +101,7 @@ py_library(
 py_library(
     name = "shape_utils",
     srcs = ["shape_utils.py"],
-    deps = [
-        ":static_shape",
-        "//tensorflow",
-    ],
+    deps = ["//tensorflow"],
 )
 
 py_library(
@@ -187,12 +115,12 @@ py_library(
     srcs = ["test_utils.py"],
     deps = [
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/core:anchor_generator",
-        "//tensorflow/models/research/object_detection/core:box_coder",
-        "//tensorflow/models/research/object_detection/core:box_list",
-        "//tensorflow/models/research/object_detection/core:box_predictor",
-        "//tensorflow/models/research/object_detection/core:matcher",
-        "//tensorflow/models/research/object_detection/utils:shape_utils",
+        "//tensorflow_models/object_detection/core:anchor_generator",
+        "//tensorflow_models/object_detection/core:box_coder",
+        "//tensorflow_models/object_detection/core:box_list",
+        "//tensorflow_models/object_detection/core:box_predictor",
+        "//tensorflow_models/object_detection/core:matcher",
+        "//tensorflow_models/object_detection/utils:shape_utils"
     ],
 )
 
@@ -208,12 +136,8 @@ py_library(
     name = "visualization_utils",
     srcs = ["visualization_utils.py"],
     deps = [
-        "//PIL:pil",
-        "//Tkinter",  # buildcleaner: keep
-        "//matplotlib",
-        "//six",
+        "//third_party/py/PIL:pil",
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/core:standard_fields",
     ],
 )
 
@@ -227,26 +151,11 @@ py_test(
 )
 
 py_test(
-    name = "config_util_test",
-    srcs = ["config_util_test.py"],
-    deps = [
-        ":config_util",
-        "//tensorflow",
-        "//tensorflow/models/research/object_detection/protos:image_resizer_py_pb2",
-        "//tensorflow/models/research/object_detection/protos:input_reader_py_pb2",
-        "//tensorflow/models/research/object_detection/protos:model_py_pb2",
-        "//tensorflow/models/research/object_detection/protos:pipeline_py_pb2",
-        "//tensorflow/models/research/object_detection/protos:train_py_pb2",
-    ],
-)
-
-py_test(
     name = "dataset_util_test",
     srcs = ["dataset_util_test.py"],
     deps = [
         ":dataset_util",
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/protos:input_reader_py_pb2",
     ],
 )
 
@@ -282,17 +191,6 @@ py_test(
     srcs = ["np_box_list_test.py"],
     deps = [
         ":np_box_list",
-        "//numpy",
-        "//tensorflow",
-    ],
-)
-
-py_test(
-    name = "np_box_mask_list_test",
-    srcs = ["np_box_mask_list_test.py"],
-    deps = [
-        ":np_box_mask_list",
-        "//numpy",
         "//tensorflow",
     ],
 )
@@ -303,18 +201,6 @@ py_test(
     deps = [
         ":np_box_list",
         ":np_box_list_ops",
-        "//numpy",
-        "//tensorflow",
-    ],
-)
-
-py_test(
-    name = "np_box_mask_list_ops_test",
-    srcs = ["np_box_mask_list_ops_test.py"],
-    deps = [
-        ":np_box_mask_list",
-        ":np_box_mask_list_ops",
-        "//numpy",
         "//tensorflow",
     ],
 )
@@ -329,21 +215,11 @@ py_test(
 )
 
 py_test(
-    name = "np_mask_ops_test",
-    srcs = ["np_mask_ops_test.py"],
-    deps = [
-        ":np_mask_ops",
-        "//tensorflow",
-    ],
-)
-
-py_test(
     name = "object_detection_evaluation_test",
     srcs = ["object_detection_evaluation_test.py"],
     deps = [
         ":object_detection_evaluation",
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/core:standard_fields",
     ],
 )
 
@@ -352,9 +228,8 @@ py_test(
     srcs = ["ops_test.py"],
     deps = [
         ":ops",
-        ":test_case",
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/core:standard_fields",
+        "//tensorflow_models/object_detection/core:standard_fields",
     ],
 )
 
@@ -372,7 +247,6 @@ py_test(
     srcs = ["shape_utils_test.py"],
     deps = [
         ":shape_utils",
-        "//numpy",
         "//tensorflow",
     ],
 )
@@ -407,12 +281,8 @@ py_test(
 py_test(
     name = "visualization_utils_test",
     srcs = ["visualization_utils_test.py"],
-    data = [
-        "//tensorflow/models/research/object_detection/test_images:image1.jpg",
-    ],
     deps = [
         ":visualization_utils",
-        "//pyglib/flags",
-        "//PIL:pil",
+        "//third_party/py/PIL:pil",
     ],
 )

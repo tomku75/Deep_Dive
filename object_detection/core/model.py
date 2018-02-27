@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
 """Abstract detection model.
 
 This file defines a generic base class for detection models.  Programs that are
@@ -38,17 +39,6 @@ the input size or aspect ratio --- they are responsible for doing any
 resize/reshaping necessary (see docstring for the preprocess function).
 Output classes are always integers in the range [0, num_classes).  Any mapping
 of these integers to semantic labels is to be handled outside of this class.
-
-Images are resized in the `preprocess` method. All of `preprocess`, `predict`,
-and `postprocess` should be reentrant.
-
-The `preprocess` method runs `image_resizer_fn` that returns resized_images and
-`true_image_shapes`. Since `image_resizer_fn` can pad the images with zeros,
-true_image_shapes indicate the slices that contain the image without padding.
-This is useful for padding images to be a fixed size for batching.
-
-The `postprocess` method uses the true image shapes to clip predictions that lie
-outside of images.
 
 By default, DetectionModels produce bounding box detections; However, we support
 a handful of auxiliary annotations associated with each bounding box, namely,
@@ -97,18 +87,6 @@ class DetectionModel(object):
       raise RuntimeError('Groundtruth tensor %s has not been provided', field)
     return self._groundtruth_lists[field]
 
-  def groundtruth_has_field(self, field):
-    """Determines whether the groundtruth includes the given field.
-
-    Args:
-      field: a string key, options are
-        fields.BoxListFields.{boxes,classes,masks,keypoints}
-
-    Returns:
-      True if the groundtruth includes the given field, False otherwise.
-    """
-    return field in self._groundtruth_lists
-
   @abstractmethod
   def preprocess(self, inputs):
     """Input preprocessing.
@@ -117,12 +95,12 @@ class DetectionModel(object):
 
     This function is responsible for any scaling/shifting of input values that
     is necessary prior to running the detector on an input image.
-    It is also responsible for any resizing, padding that might be necessary
-    as images are assumed to arrive in arbitrary sizes.  While this function
-    could conceivably be part of the predict method (below), it is often
-    convenient to keep these separate --- for example, we may want to preprocess
-    on one device, place onto a queue, and let another device (e.g., the GPU)
-    handle prediction.
+    It is also responsible for any resizing that might be necessary as images
+    are assumed to arrive in arbitrary sizes.  While this function could
+    conceivably be part of the predict method (below), it is often convenient
+    to keep these separate --- for example, we may want to preprocess on one
+    device, place onto a queue, and let another device (e.g., the GPU) handle
+    prediction.
 
     A few important notes about the preprocess function:
     + We assume that this operation does not have any trainable variables nor
@@ -145,15 +123,11 @@ class DetectionModel(object):
     Returns:
       preprocessed_inputs: a [batch, height_out, width_out, channels] float32
         tensor representing a batch of images.
-      true_image_shapes: int32 tensor of shape [batch, 3] where each row is
-        of the form [height, width, channels] indicating the shapes
-        of true images in the resized images, as resized images can be padded
-        with zeros.
     """
     pass
 
   @abstractmethod
-  def predict(self, preprocessed_inputs, true_image_shapes):
+  def predict(self, preprocessed_inputs):
     """Predict prediction tensors from inputs tensor.
 
     Outputs of this function can be passed to loss or postprocess functions.
@@ -161,10 +135,6 @@ class DetectionModel(object):
     Args:
       preprocessed_inputs: a [batch, height, width, channels] float32 tensor
         representing a batch of images.
-      true_image_shapes: int32 tensor of shape [batch, 3] where each row is
-        of the form [height, width, channels] indicating the shapes
-        of true images in the resized images, as resized images can be padded
-        with zeros.
 
     Returns:
       prediction_dict: a dictionary holding prediction tensors to be
@@ -173,13 +143,12 @@ class DetectionModel(object):
     pass
 
   @abstractmethod
-  def postprocess(self, prediction_dict, true_image_shapes, **params):
+  def postprocess(self, prediction_dict, **params):
     """Convert predicted output tensors to final detections.
 
     Outputs adhere to the following conventions:
     * Classes are integers in [0, num_classes); background classes are removed
-      and the first non-background class is mapped to 0. If the model produces
-      class-agnostic detections, then no output is produced for classes.
+      and the first non-background class is mapped to 0.
     * Boxes are to be interpreted as being in [y_min, x_min, y_max, x_max]
       format and normalized relative to the image window.
     * `num_detections` is provided for settings where detections are padded to a
@@ -191,10 +160,6 @@ class DetectionModel(object):
 
     Args:
       prediction_dict: a dictionary holding prediction tensors.
-      true_image_shapes: int32 tensor of shape [batch, 3] where each row is
-        of the form [height, width, channels] indicating the shapes
-        of true images in the resized images, as resized images can be padded
-        with zeros.
       **params: Additional keyword arguments for specific implementations of
         DetectionModel.
 
@@ -203,8 +168,6 @@ class DetectionModel(object):
         detection_boxes: [batch, max_detections, 4]
         detection_scores: [batch, max_detections]
         detection_classes: [batch, max_detections]
-          (If a model is producing class-agnostic detections, this field may be
-          missing)
         instance_masks: [batch, max_detections, image_height, image_width]
           (optional)
         keypoints: [batch, max_detections, num_keypoints, 2] (optional)
@@ -213,7 +176,7 @@ class DetectionModel(object):
     pass
 
   @abstractmethod
-  def loss(self, prediction_dict, true_image_shapes):
+  def loss(self, prediction_dict):
     """Compute scalar loss tensors with respect to provided groundtruth.
 
     Calling this function requires that groundtruth tensors have been
@@ -221,10 +184,6 @@ class DetectionModel(object):
 
     Args:
       prediction_dict: a dictionary holding predicted tensors
-      true_image_shapes: int32 tensor of shape [batch, 3] where each row is
-        of the form [height, width, channels] indicating the shapes
-        of true images in the resized images, as resized images can be padded
-        with zeros.
 
     Returns:
       a dictionary mapping strings (loss names) to scalar tensors representing
@@ -236,8 +195,7 @@ class DetectionModel(object):
                           groundtruth_boxes_list,
                           groundtruth_classes_list,
                           groundtruth_masks_list=None,
-                          groundtruth_keypoints_list=None,
-                          groundtruth_weights_list=None):
+                          groundtruth_keypoints_list=None):
     """Provide groundtruth tensors.
 
     Args:
@@ -249,24 +207,19 @@ class DetectionModel(object):
       groundtruth_classes_list: a list of 2-D tf.float32 one-hot (or k-hot)
         tensors of shape [num_boxes, num_classes] containing the class targets
         with the 0th index assumed to map to the first non-background class.
-      groundtruth_masks_list: a list of 3-D tf.float32 tensors of
-        shape [num_boxes, height_in, width_in] containing instance
+      groundtruth_masks_list: a list of 2-D tf.float32 tensors of
+        shape [max_detections, height_in, width_in] containing instance
         masks with values in {0, 1}.  If None, no masks are provided.
         Mask resolution `height_in`x`width_in` must agree with the resolution
         of the input image tensor provided to the `preprocess` function.
-      groundtruth_keypoints_list: a list of 3-D tf.float32 tensors of
-        shape [num_boxes, num_keypoints, 2] containing keypoints.
+      groundtruth_keypoints_list: a list of 2-D tf.float32 tensors of
+        shape [batch, max_detections, num_keypoints, 2] containing keypoints.
         Keypoints are assumed to be provided in normalized coordinates and
         missing keypoints should be encoded as NaN.
-      groundtruth_weights_list: A list of 1-D tf.float32 tensors of shape
-        [num_boxes] containing weights for groundtruth boxes.
     """
     self._groundtruth_lists[fields.BoxListFields.boxes] = groundtruth_boxes_list
     self._groundtruth_lists[
         fields.BoxListFields.classes] = groundtruth_classes_list
-    if groundtruth_weights_list:
-      self._groundtruth_lists[fields.BoxListFields.
-                              weights] = groundtruth_weights_list
     if groundtruth_masks_list:
       self._groundtruth_lists[
           fields.BoxListFields.masks] = groundtruth_masks_list

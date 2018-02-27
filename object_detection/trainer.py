@@ -35,9 +35,9 @@ from deployment import model_deploy
 slim = tf.contrib.slim
 
 
-def create_input_queue(batch_size_per_clone, create_tensor_dict_fn,
-                       batch_queue_capacity, num_batch_queue_threads,
-                       prefetch_queue_capacity, data_augmentation_options):
+def _create_input_queue(batch_size_per_clone, create_tensor_dict_fn,
+                        batch_queue_capacity, num_batch_queue_threads,
+                        prefetch_queue_capacity, data_augmentation_options):
   """Sets up reader, prefetcher and returns input queue.
 
   Args:
@@ -65,16 +65,9 @@ def create_input_queue(batch_size_per_clone, create_tensor_dict_fn,
   float_images = tf.to_float(images)
   tensor_dict[fields.InputDataFields.image] = float_images
 
-  include_instance_masks = (fields.InputDataFields.groundtruth_instance_masks
-                            in tensor_dict)
-  include_keypoints = (fields.InputDataFields.groundtruth_keypoints
-                       in tensor_dict)
   if data_augmentation_options:
-    tensor_dict = preprocessor.preprocess(
-        tensor_dict, data_augmentation_options,
-        func_arg_map=preprocessor.get_default_func_arg_map(
-            include_instance_masks=include_instance_masks,
-            include_keypoints=include_keypoints))
+    tensor_dict = preprocessor.preprocess(tensor_dict,
+                                          data_augmentation_options)
 
   input_queue = batcher.BatchQueue(
       tensor_dict,
@@ -85,107 +78,66 @@ def create_input_queue(batch_size_per_clone, create_tensor_dict_fn,
   return input_queue
 
 
-def get_inputs(input_queue, num_classes, merge_multiple_label_boxes=False):
-  """Dequeues batch and constructs inputs to object detection model.
+def _get_inputs(input_queue, num_classes):
+  """Dequeue batch and construct inputs to object detection model.
 
   Args:
     input_queue: BatchQueue object holding enqueued tensor_dicts.
     num_classes: Number of classes.
-    merge_multiple_label_boxes: Whether to merge boxes with multiple labels
-      or not. Defaults to false. Merged boxes are represented with a single
-      box and a k-hot encoding of the multiple labels associated with the
-      boxes.
 
   Returns:
     images: a list of 3-D float tensor of images.
-    image_keys: a list of string keys for the images.
     locations_list: a list of tensors of shape [num_boxes, 4]
       containing the corners of the groundtruth boxes.
     classes_list: a list of padded one-hot tensors containing target classes.
     masks_list: a list of 3-D float tensors of shape [num_boxes, image_height,
       image_width] containing instance masks for objects if present in the
       input_queue. Else returns None.
-    keypoints_list: a list of 3-D float tensors of shape [num_boxes,
-      num_keypoints, 2] containing keypoints for objects if present in the
-      input queue. Else returns None.
-    weights_lists: a list of 1-D float32 tensors of shape [num_boxes]
-      containing groundtruth weight for each box.
   """
   read_data_list = input_queue.dequeue()
   label_id_offset = 1
   def extract_images_and_targets(read_data):
-    """Extract images and targets from the input dict."""
     image = read_data[fields.InputDataFields.image]
-    key = ''
-    if fields.InputDataFields.source_id in read_data:
-      key = read_data[fields.InputDataFields.source_id]
     location_gt = read_data[fields.InputDataFields.groundtruth_boxes]
     classes_gt = tf.cast(read_data[fields.InputDataFields.groundtruth_classes],
                          tf.int32)
     classes_gt -= label_id_offset
-    if merge_multiple_label_boxes:
-      location_gt, classes_gt, _ = util_ops.merge_boxes_with_multiple_labels(
-          location_gt, classes_gt, num_classes)
-    else:
-      classes_gt = util_ops.padded_one_hot_encoding(
-          indices=classes_gt, depth=num_classes, left_pad=0)
+    classes_gt = util_ops.padded_one_hot_encoding(indices=classes_gt,
+                                                  depth=num_classes, left_pad=0)
     masks_gt = read_data.get(fields.InputDataFields.groundtruth_instance_masks)
-    keypoints_gt = read_data.get(fields.InputDataFields.groundtruth_keypoints)
-    if (merge_multiple_label_boxes and (
-        masks_gt is not None or keypoints_gt is not None)):
-      raise NotImplementedError('Multi-label support is only for boxes.')
-    weights_gt = read_data.get(
-        fields.InputDataFields.groundtruth_weights)
-    return (image, key, location_gt, classes_gt, masks_gt, keypoints_gt,
-            weights_gt)
-
+    return image, location_gt, classes_gt, masks_gt
   return zip(*map(extract_images_and_targets, read_data_list))
 
 
-def _create_losses(input_queue, create_model_fn, train_config):
+def _create_losses(input_queue, create_model_fn):
   """Creates loss function for a DetectionModel.
 
   Args:
     input_queue: BatchQueue object holding enqueued tensor_dicts.
     create_model_fn: A function to create the DetectionModel.
-    train_config: a train_pb2.TrainConfig protobuf.
   """
   detection_model = create_model_fn()
-  (images, _, groundtruth_boxes_list, groundtruth_classes_list,
-   groundtruth_masks_list, groundtruth_keypoints_list, _) = get_inputs(
-       input_queue,
-       detection_model.num_classes,
-       train_config.merge_multiple_label_boxes)
-
-  preprocessed_images = []
-  true_image_shapes = []
-  for image in images:
-    resized_image, true_image_shape = detection_model.preprocess(image)
-    preprocessed_images.append(resized_image)
-    true_image_shapes.append(true_image_shape)
-
-  images = tf.concat(preprocessed_images, 0)
-  true_image_shapes = tf.concat(true_image_shapes, 0)
-
+  (images, groundtruth_boxes_list, groundtruth_classes_list,
+   groundtruth_masks_list
+  ) = _get_inputs(input_queue, detection_model.num_classes)
+  images = [detection_model.preprocess(image) for image in images]
+  images = tf.concat(images, 0)
   if any(mask is None for mask in groundtruth_masks_list):
     groundtruth_masks_list = None
-  if any(keypoints is None for keypoints in groundtruth_keypoints_list):
-    groundtruth_keypoints_list = None
 
   detection_model.provide_groundtruth(groundtruth_boxes_list,
                                       groundtruth_classes_list,
-                                      groundtruth_masks_list,
-                                      groundtruth_keypoints_list)
-  prediction_dict = detection_model.predict(images, true_image_shapes)
+                                      groundtruth_masks_list)
+  prediction_dict = detection_model.predict(images)
 
-  losses_dict = detection_model.loss(prediction_dict, true_image_shapes)
+  losses_dict = detection_model.loss(prediction_dict)
   for loss_tensor in losses_dict.values():
     tf.losses.add_loss(loss_tensor)
 
 
 def train(create_tensor_dict_fn, create_model_fn, train_config, master, task,
           num_clones, worker_replicas, clone_on_cpu, ps_tasks, worker_job_name,
-          is_chief, train_dir, graph_hook_fn=None):
+          is_chief, train_dir):
   """Training function for detection models.
 
   Args:
@@ -202,10 +154,6 @@ def train(create_tensor_dict_fn, create_model_fn, train_config, master, task,
     worker_job_name: Name of the worker job.
     is_chief: Whether this replica is the chief replica.
     train_dir: Directory to write checkpoints and training summaries to.
-    graph_hook_fn: Optional function that is called after the training graph is
-      completely built. This is helpful to perform additional changes to the
-      training graph such as optimizing batchnorm. The function should modify
-      the default graph.
   """
 
   detection_model = create_model_fn()
@@ -228,21 +176,19 @@ def train(create_tensor_dict_fn, create_model_fn, train_config, master, task,
       global_step = slim.create_global_step()
 
     with tf.device(deploy_config.inputs_device()):
-      input_queue = create_input_queue(
-          train_config.batch_size // num_clones, create_tensor_dict_fn,
-          train_config.batch_queue_capacity,
-          train_config.num_batch_queue_threads,
-          train_config.prefetch_queue_capacity, data_augmentation_options)
+      input_queue = _create_input_queue(train_config.batch_size // num_clones,
+                                        create_tensor_dict_fn,
+                                        train_config.batch_queue_capacity,
+                                        train_config.num_batch_queue_threads,
+                                        train_config.prefetch_queue_capacity,
+                                        data_augmentation_options)
 
     # Gather initial summaries.
-    # TODO: See if summaries can be added/extracted from global tf
-    # collections so that they don't have to be passed around.
     summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
     global_summaries = set([])
 
     model_fn = functools.partial(_create_losses,
-                                 create_model_fn=create_model_fn,
-                                 train_config=train_config)
+                                 create_model_fn=create_model_fn)
     clones = model_deploy.create_clones(deploy_config, model_fn, [input_queue])
     first_clone_scope = clones[0].scope
 
@@ -251,10 +197,8 @@ def train(create_tensor_dict_fn, create_model_fn, train_config, master, task,
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS, first_clone_scope)
 
     with tf.device(deploy_config.optimizer_device()):
-      training_optimizer, optimizer_summary_vars = optimizer_builder.build(
-          train_config.optimizer)
-      for var in optimizer_summary_vars:
-        tf.summary.scalar(var.op.name, var)
+      training_optimizer = optimizer_builder.build(train_config.optimizer,
+                                                   global_summaries)
 
     sync_optimizer = None
     if train_config.sync_replicas:
@@ -278,11 +222,8 @@ def train(create_tensor_dict_fn, create_model_fn, train_config, master, task,
       init_fn = initializer_fn
 
     with tf.device(deploy_config.optimizer_device()):
-      regularization_losses = (None if train_config.add_regularization_loss
-                               else [])
       total_loss, grads_and_vars = model_deploy.optimize_clones(
-          clones, training_optimizer,
-          regularization_losses=regularization_losses)
+          clones, training_optimizer, regularization_losses=None)
       total_loss = tf.check_numerics(total_loss, 'LossTensor is inf or nan.')
 
       # Optionally multiply bias gradients by train_config.bias_grad_multiplier.
@@ -308,13 +249,10 @@ def train(create_tensor_dict_fn, create_model_fn, train_config, master, task,
       grad_updates = training_optimizer.apply_gradients(grads_and_vars,
                                                         global_step=global_step)
       update_ops.append(grad_updates)
-      update_op = tf.group(*update_ops, name='update_barrier')
+
+      update_op = tf.group(*update_ops)
       with tf.control_dependencies([update_op]):
         train_tensor = tf.identity(total_loss, name='train_op')
-
-    if graph_hook_fn:
-      with tf.device(deploy_config.variables_device()):
-        graph_hook_fn()
 
     # Add summaries.
     for model_var in slim.get_model_variables():

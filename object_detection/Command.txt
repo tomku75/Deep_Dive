@@ -37,3 +37,15 @@
         --pipeline_config_path /PATH/TO/CONFIG/FILE.config `
         --trained_checkpoint_prefix /PATH/TO/TRAINED/OUTPUT/DIRECTORY/model.ckpt `
         --output_directory /PATH/TO/FROZEN/DIRECTORY
+
+#train on gcloud
+    gcloud ml-engine jobs submit training object_detection_kuse_v1 `
+    	--runtime-version 1.4 `
+    	--job-dir=gs://kuse_gs/train `
+    	--packages dist/object_detection-0.1.tar.gz,slim/dist/slim-0.1.tar.gz `
+    	--module-name object_detection.train `
+    	--region us-central1 `
+    	--config object_detection/samples/cloud/cloud.yml `
+    	-- `
+    	--train_dir=gs://kuse_gs/train `
+    	--pipeline_config_path=gs://kuse_gs/data/ssd_mobilenet_v1_coco.config

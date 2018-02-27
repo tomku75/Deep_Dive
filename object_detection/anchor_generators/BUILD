@@ -14,9 +14,9 @@ py_library(
     ],
     deps = [
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/core:anchor_generator",
-        "//tensorflow/models/research/object_detection/core:box_list",
-        "//tensorflow/models/research/object_detection/utils:ops",
+        "//tensorflow_models/object_detection/core:anchor_generator",
+        "//tensorflow_models/object_detection/core:box_list",
+        "//tensorflow_models/object_detection/utils:ops",
     ],
 )
 
@@ -28,7 +28,6 @@ py_test(
     deps = [
         ":grid_anchor_generator",
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/utils:test_case",
     ],
 )
 
@@ -40,8 +39,8 @@ py_library(
     deps = [
         ":grid_anchor_generator",
         "//tensorflow",
-        "//tensorflow/models/research/object_detection/core:anchor_generator",
-        "//tensorflow/models/research/object_detection/core:box_list_ops",
+        "//tensorflow_models/object_detection/core:anchor_generator",
+        "//tensorflow_models/object_detection/core:box_list_ops",
     ],
 )
 
@@ -52,32 +51,6 @@ py_test(
     ],
     deps = [
         ":multiple_grid_anchor_generator",
-        "//numpy",
-        "//tensorflow/models/research/object_detection/utils:test_case",
-    ],
-)
-
-py_library(
-    name = "multiscale_grid_anchor_generator",
-    srcs = [
-        "multiscale_grid_anchor_generator.py",
-    ],
-    deps = [
-        ":grid_anchor_generator",
-        "//tensorflow",
-        "//tensorflow/models/research/object_detection/core:anchor_generator",
-        "//tensorflow/models/research/object_detection/core:box_list_ops",
-    ],
-)
-
-py_test(
-    name = "multiscale_grid_anchor_generator_test",
-    srcs = [
-        "multiscale_grid_anchor_generator_test.py",
-    ],
-    deps = [
-        ":multiscale_grid_anchor_generator",
-        "//numpy",
-        "//tensorflow/models/research/object_detection/utils:test_case",
+        "//third_party/py/numpy",
     ],
 )

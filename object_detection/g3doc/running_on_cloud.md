@@ -27,7 +27,7 @@ packaged (along with it's TF-Slim dependency). The required packages can be
 created with the following command
 
 ``` bash
-# From tensorflow/models/research/
+# From tensorflow/models/
 python setup.py sdist
 (cd slim && python setup.py sdist)
 ```
@@ -42,7 +42,7 @@ job using GPUs. A sample YAML file is given below:
 
 ```
 trainingInput:
-  runtimeVersion: "1.2"
+  runtimeVersion: "1.0"
   scaleTier: CUSTOM
   masterType: standard_gpu
   workerCount: 9
@@ -69,9 +69,8 @@ been written, a user can start a training job on Cloud ML Engine using the
 following command:
 
 ``` bash
-# From tensorflow/models/research/
+# From tensorflow/models/
 gcloud ml-engine jobs submit training object_detection_`date +%s` \
-    --runtime-version 1.2 \
     --job-dir=gs://${TRAIN_DIR} \
     --packages dist/object_detection-0.1.tar.gz,slim/dist/slim-0.1.tar.gz \
     --module-name object_detection.train \
@@ -91,8 +90,6 @@ Google Cloud Storage.
 Users can monitor the progress of their training job on the [ML Engine
 Dashboard](https://console.cloud.google.com/mlengine/jobs).
 
-Note: This sample is supported for use with 1.2 runtime version.
-
 ## Running an Evaluation Job on Cloud
 
 Evaluation jobs run on a single machine, so it is not necessary to write a YAML
@@ -101,7 +98,6 @@ job:
 
 ``` bash
 gcloud ml-engine jobs submit training object_detection_eval_`date +%s` \
-    --runtime-version 1.2 \
     --job-dir=gs://${TRAIN_DIR} \
     --packages dist/object_detection-0.1.tar.gz,slim/dist/slim-0.1.tar.gz \
     --module-name object_detection.eval \

@@ -5,17 +5,16 @@
 Tensorflow Object Detection API depends on the following libraries:
 
 * Protobuf 2.6
-* Python-tk
 * Pillow 1.0
 * lxml
-* tf Slim (which is included in the "tensorflow/models/research/" checkout)
+* tf Slim (which is included in the "tensorflow/models" checkout)
 * Jupyter notebook
 * Matplotlib
 * Tensorflow
 
-For detailed steps to install Tensorflow, follow the [Tensorflow installation
-instructions](https://www.tensorflow.org/install/). A typical user can install
-Tensorflow using one of the following commands:
+For detailed steps to install Tensorflow, follow the
+[Tensorflow installation instructions](https://www.tensorflow.org/install/).
+A typically user can install Tensorflow using one of the following commands:
 
 ``` bash
 # For CPU
@@ -27,7 +26,7 @@ pip install tensorflow-gpu
 The remaining libraries can be installed on Ubuntu 16.04 using via apt-get:
 
 ``` bash
-sudo apt-get install protobuf-compiler python-pil python-lxml python-tk
+sudo apt-get install protobuf-compiler python-pil python-lxml
 sudo pip install jupyter
 sudo pip install matplotlib
 ```
@@ -46,23 +45,23 @@ sudo pip install matplotlib
 The Tensorflow Object Detection API uses Protobufs to configure model and
 training parameters. Before the framework can be used, the Protobuf libraries
 must be compiled. This should be done by running the following command from
-the tensorflow/models/research/ directory:
+the tensorflow/models directory:
 
 
 ``` bash
-# From tensorflow/models/research/
+# From tensorflow/models/
 protoc object_detection/protos/*.proto --python_out=.
 ```
 
 ## Add Libraries to PYTHONPATH
 
-When running locally, the tensorflow/models/research/ and slim directories
-should be appended to PYTHONPATH. This can be done by running the following from
-tensorflow/models/research/:
+When running locally, the tensorflow/models/ and slim directories should be
+appended to PYTHONPATH. This can be done by running the following from
+tensorflow/models/:
 
 
 ``` bash
-# From tensorflow/models/research/
+# From tensorflow/models/
 export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
 ```
 

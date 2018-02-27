@@ -45,13 +45,11 @@
 # downloading the raw images.
 #
 # usage:
-#  cd research/slim
-#  bazel build :download_and_convert_imagenet
-#  ./bazel-bin/download_and_convert_imagenet.sh [data-dir]
+#  ./download_and_preprocess_imagenet.sh [data-dir]
 set -e
 
 if [ -z "$1" ]; then
-  echo "usage download_and_convert_imagenet.sh [data dir]"
+  echo "usage download_and_preprocess_imagenet.sh [data dir]"
   exit
 fi
 
@@ -60,7 +58,7 @@ DATA_DIR="${1%/}"
 SCRATCH_DIR="${DATA_DIR}/raw-data/"
 mkdir -p "${DATA_DIR}"
 mkdir -p "${SCRATCH_DIR}"
-WORK_DIR="$0.runfiles/__main__"
+WORK_DIR="$0.runfiles/third_party/tensorflow_models/slim"
 
 # Download the ImageNet data.
 LABELS_FILE="${WORK_DIR}/datasets/imagenet_lsvrc_2015_synsets.txt"
