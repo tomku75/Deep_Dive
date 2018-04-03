@@ -6,6 +6,12 @@
 #2. create_label_map
     ทำเอง
 
+#process_image
+    python .\preprocessing\process_images.py `
+    --image_directory .\images\train\ `
+    --datapoints_input_path .\annotations_points\kuse_train.json `
+    --datapoints_output_path .\image_saving\train\
+
 #3. TFRecord
     python .\preprocessing\record_maker.py `
         --points_path .\annotations_points\points_test.json `
@@ -15,16 +21,25 @@
 
 #4. Train
     python object_detection/train.py `
+         --logtostderr `
+         --train_dir=object_detection/train_licence_plate `
+         --pipeline_config_path=object_detection/pipeline_config/faster_rcnn_resnet101_coco.config
+    python object_detection/train.py `
         --logtostderr `
         --train_dir=object_detection/train_dir `
         --pipeline_config_path=object_detection/pipeline_config/faster_rcnn_resnet101_coco.config
 
 #5. Eval
     python object_detection/eval.py `
+         --logtostderr `
+	 --checkpoint_dir=object_detection/train_licence_plate `
+         --eval_dir=object_detection/eval_licence_plate `
+         --pipeline_config_path=object_detection/pipeline_config/faster_rcnn_resnet101_coco.config
+    python object_detection/eval.py `
         --logtostderr `
         --checkpoint_dir=object_detection/train_dir `
         --eval_dir=object_detection/eval_dir `
-        --pipeline_config_path=object_detection/pipeline_config_path/faster_rcnn_resnet101_coco.config
+        --pipeline_config_path=object_detection/pipeline_config/faster_rcnn_resnet101_coco.config
 
 #6. run tensorboard
     tensorboard `
@@ -33,19 +48,24 @@
         --host=localhost
 
 #7. create inference graph
+    python export_inference_graph.py `
+	--input_type image_tensor `
+	--pipeline_config_path .\pipeline_config\faster_rcnn_resnet101_coco.config `
+	--trained_checkpoint_prefix .\train_licence_plate\model.ckpt-30768 `
+	--output_directory .\graph_inference\ `
+	--config_override "model{faster_rcnn {second_stage_post_processing {batch_non_max_suppression {score_threshold: 0.5}}}}"
     python export_inference_graph.py --input_type image_tensor `
-        --pipeline_config_path /PATH/TO/CONFIG/FILE.config `
-        --trained_checkpoint_prefix /PATH/TO/TRAINED/OUTPUT/DIRECTORY/model.ckpt `
-        --output_directory /PATH/TO/FROZEN/DIRECTORY
+        --pipeline_config_path pipeline_config/faster_rcnn_resnet101_coco.config `
+        --trained_checkpoint_prefix train_licence_plate/model.ckpt-23422 `
+        --output_directory graph_inference
 
-#train on gcloud
-    gcloud ml-engine jobs submit training object_detection_kuse_v1 `
-    	--runtime-version 1.4 `
-    	--job-dir=gs://kuse_gs/train `
-    	--packages dist/object_detection-0.1.tar.gz,slim/dist/slim-0.1.tar.gz `
-    	--module-name object_detection.train `
-    	--region us-central1 `
-    	--config object_detection/samples/cloud/cloud.yml `
-    	-- `
-    	--train_dir=gs://kuse_gs/train `
-    	--pipeline_config_path=gs://kuse_gs/data/ssd_mobilenet_v1_coco.config
+#cloud
+    gcloud ml-engine jobs submit training kuse_model_v1_0001 `
+		--runtime-version 1.4 --job-dir=gs://kuse_gs/train `
+		--packages dist/object_detection-0.1.tar.gz,slim/dist/slim-0.1.tar.gz `
+		--module-name object_detection.train `
+		--region us-central1 `
+		--config object_detection/samples/cloud/cloud.yml `
+		-- `
+		--train_dir=gs://kuse_gs/train `
+		--pipeline_config_path=gs://kuse_gs/data/ssd_mobilenet_v1_coco.config

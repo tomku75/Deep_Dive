@@ -1,0 +1,31 @@
+python train_image_classifier.py `
+    --train_dir=data/mnist-models/inception_v3 `
+    --dataset_dir=data/mnist `
+    --dataset_name=mnist `
+    --dataset_split_name=train `
+    --model_name=inception_v3 `
+    --checkpoint_path=data/my_checkpoints/inception_v3.ckpt `
+    --checkpoint_exclude_scopes=InceptionV3/Logits,InceptionV3/AuxLogits `
+    --trainable_scopes=InceptionV3/Logits,InceptionV3/AuxLogits
+	
+python train_image_classifier.py `
+    --train_dir=data/mnist-models/inception_v3 `
+    --dataset_name=mnist `
+    --dataset_split_name=train `
+    --dataset_dir=data/mnist `
+    --model_name=inception_v3
+	
+ gcloud ml-engine jobs submit training job_mnist_01 `
+    --runtime-version 1.6 --job-dir=gs://kuse_mnist/train `
+	--packages dist/slim-0.1.tar.gz `
+	--module-name train_image_classifier `
+	--region us-central1 `
+	--config sample/cloud.yml `
+	-- `
+	--train_dir=gs://kuse_mnist/train `
+    --dataset_name=mnist `
+    --dataset_split_name=train `
+    --dataset_dir=gs://kuse_mnist/data `
+    --model_name=inception_v3 `
+    --preprocessing_name=lenet
+	

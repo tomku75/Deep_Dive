@@ -111,6 +111,7 @@ def _add_to_tfrecord(data_filename, labels_filename, num_images,
   """
   images = _extract_images(data_filename, num_images)
   labels = _extract_labels(labels_filename, num_images)
+  #print(images, labels)
 
   shape = (_IMAGE_SIZE, _IMAGE_SIZE, _NUM_CHANNELS)
   with tf.Graph().as_default():

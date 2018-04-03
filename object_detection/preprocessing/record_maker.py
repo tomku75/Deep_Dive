@@ -5,6 +5,8 @@ import argparse
 import tensorflow as tf
 from PIL import Image
 from tqdm import tqdm
+import contextlib2
+import random
 
 from object_detection.utils import dataset_util
 from object_detection.utils import label_map_util
@@ -70,10 +72,24 @@ def group_to_tf_record(point, image_directory, label_map_dict, ignore_difficult_
     }))
     return tf_example
 
+def open_sharded_output_tfrecords(exit_stack, base_path, num_shards):
+  
+  tf_record_output_filenames = [
+      '{}-{:05d}-of-{:05d}'.format(base_path, idx+1, num_shards)
+      for idx in range(num_shards)
+  ]
+
+  tfrecords = [
+      exit_stack.enter_context(tf.python_io.TFRecordWriter(file_name))
+      for file_name in tf_record_output_filenames
+  ]
+
+  return tfrecords
 
 def load_points(file_path):
-    with open(file_path, 'rb') as f:
+    with open(file_path, 'r') as f:
         points = json.load(f)
+        print(points)
     return points
 
 parser = argparse.ArgumentParser()
@@ -90,10 +106,16 @@ if __name__ == "__main__":
     saved_images_directory = args.saved_images_directory
     points = load_points(points_file)
     #with_class_num = generate_class_num(points)
-    writer = tf.python_io.TFRecordWriter(record_save_path)
-    for point in tqdm(points, desc="writing to file"):
-        record = group_to_tf_record(point, saved_images_directory, label_map_dict)
-        if record:
-            serialized = record.SerializeToString()
-            writer.write(serialized)
-    writer.close()
+    shard_legth = 100
+    num_shard = 1#(len(points) // shard_legth) + 1
+    
+    with contextlib2.ExitStack() as tf_record_close_stack:
+        output_tfrecords = open_sharded_output_tfrecords(
+            tf_record_close_stack, record_save_path, num_shard)
+        
+        for point in tqdm(points, desc="writing to file"):
+            record = group_to_tf_record(point, saved_images_directory, label_map_dict)
+            if record:
+                shard_idx = random.randint(0,num_shard-1)
+                output_tfrecords[shard_idx].write(record.SerializeToString())
+
